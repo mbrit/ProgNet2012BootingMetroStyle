@@ -42,7 +42,6 @@ using Sqlite3Statement = Community.CsharpSqlite.Sqlite3.Vdbe;
 #else
 using Sqlite3DatabaseHandle = System.IntPtr;
 using Sqlite3Statement = System.IntPtr;
-using System.Threading;
 #endif
 
 namespace SQLite
@@ -84,8 +83,6 @@ namespace SQLite
 		private Dictionary<string, TableMapping> _tables = null;
 		private System.Diagnostics.Stopwatch _sw;
 		private long _elapsedMilliseconds = 0;
-        private IPoolEntry PoolEntry { get; set; }
-        internal long PoolId { get; private set; }
 
 		public Sqlite3DatabaseHandle Handle { get; private set; }
 #if USE_CSHARP_SQLITE
@@ -108,7 +105,16 @@ namespace SQLite
 		/// </param>
 		public SQLiteConnection (string databasePath)
 		{
-            this.Initialize(databasePath, SQLiteOpenFlags.ReadWrite, false);
+			DatabasePath = databasePath;
+			Sqlite3DatabaseHandle handle;
+			var r = SQLite3.Open (DatabasePath, out handle);
+			Handle = handle;
+			if (r != SQLite3.Result.OK) {
+				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
+			}
+			_open = true;
+			
+			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
 
 		/// <summary>
@@ -119,29 +125,17 @@ namespace SQLite
 		/// </param>
 		public SQLiteConnection (string databasePath, SQLiteOpenFlags openFlags)
 		{
-            this.Initialize(databasePath, openFlags, true);
+			DatabasePath = databasePath;
+			Sqlite3DatabaseHandle handle;
+			var r = SQLite3.Open (DatabasePath, out handle, (int) openFlags, IntPtr.Zero);
+			Handle = handle;
+			if (r != SQLite3.Result.OK) {
+				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
+			}
+			_open = true;
+			
+			BusyTimeout = TimeSpan.FromSeconds (0.1);
 		}
-
-        private void Initialize(string databasePath, SQLiteOpenFlags openFlags, bool hasFlags)
-        {
-            DatabasePath = databasePath;
-
-            Sqlite3DatabaseHandle handle;
-            SQLite3.Result r = 0;
-            if(hasFlags)
-                r = SQLite3.Open(DatabasePath, out handle, (int)openFlags, IntPtr.Zero);
-            else
-                r = SQLite3.Open(DatabasePath, out handle);
-
-            Handle = handle;
-            if (r != SQLite3.Result.OK)
-            {
-                throw SQLiteException.New(r, String.Format("Could not open database file: {0} ({1})", DatabasePath, r));
-            }
-            _open = true;
-
-            BusyTimeout = TimeSpan.FromSeconds(0.1);
-        }
 		
 		static SQLiteConnection ()
 		{
@@ -149,7 +143,7 @@ namespace SQLite
 				var ti = new TableInfo ();
 				ti.name = "magic";
 			}
-        }
+		}
 		
 		/// <summary>
 		/// Used to list some code that we want the MonoTouch linker
@@ -577,6 +571,25 @@ namespace SQLite
 		}
 
 		/// <summary>
+		/// Attempts to retrieve an object with the given primary key from the table
+		/// associated with the specified type. Use of this method requires that
+		/// the given type have a designated PrimaryKey (using the PrimaryKeyAttribute).
+		/// </summary>
+		/// <param name="pk">
+		/// The primary key.
+		/// </param>
+		/// <returns>
+		/// The object with the given primary key or null
+		/// if the object is not found.
+		/// </returns>
+		public T Find<T> (object pk) where T : new ()
+		{
+			var map = GetMapping (typeof (T));
+			string query = string.Format ("select * from \"{0}\" where \"{1}\" = ?", map.TableName, map.PK.Name);
+			return Query<T> (query, pk).FirstOrDefault ();
+		}
+
+		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
 		public bool IsInTransaction { get; private set; }
@@ -797,17 +810,10 @@ namespace SQLite
 
 		public void Dispose ()
 		{
-            if (this.PoolEntry != null)
-            {
-                // slightly strange implementation that provides loose-coupling to the 
-                // async version of this library...
-                this.PoolEntry.Owner.ConnectionFinished(this);
-            }
-            else
-                this.CloseInternal();
+			Close ();
 		}
 
-		public void CloseInternal ()
+		public void Close ()
 		{
 			if (_open && Handle != NullHandle) {
 				try {
@@ -828,13 +834,31 @@ namespace SQLite
 				}
 			}
 		}
+	}
 
-        internal void Enlist(IPoolEntry poolEntry, long poolId)
-        {
-            this.PoolEntry = poolEntry;
-            this.PoolId = poolId;
-        }
-    }
+	/// <summary>
+	/// Represents a parsed connection string.
+	/// </summary>
+	class SQLiteConnectionString
+	{
+		public string ConnectionString { get; private set; }
+		public string DatabasePath { get; private set; }
+
+#if NETFX_CORE
+		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
+#endif
+
+		public SQLiteConnectionString (string connectionString)
+		{
+			ConnectionString = connectionString;
+
+#if NETFX_CORE
+			DatabasePath = System.IO.Path.Combine (MetroStyleDataPath, connectionString);
+#else
+			DatabasePath = connectionString;
+#endif
+		}
+	}
 
 	public class PrimaryKeyAttribute : Attribute
 	{
@@ -1906,7 +1930,19 @@ namespace SQLite
 		{
 			return GetEnumerator ();
 		}
-	}
+
+        internal T ToFirst ()
+        {
+            var query = Take (1);
+            return query.ToList().First ();
+        }
+
+        internal T ToFirstOrDefault ()
+        {
+            var query = this.Take (1);
+            return query.ToList().FirstOrDefault ();
+        }
+    }
 
 	public static class SQLite3
 	{
@@ -2234,17 +2270,4 @@ namespace SQLite
 			Null = 5
 		}
 	}
-
-    internal interface IPoolEntry
-    {
-        IPoolOwner Owner
-        {
-            get;
-        }
-    }
-
-    internal interface IPoolOwner
-    {
-        void ConnectionFinished(SQLiteConnection conn);
-    }
 }

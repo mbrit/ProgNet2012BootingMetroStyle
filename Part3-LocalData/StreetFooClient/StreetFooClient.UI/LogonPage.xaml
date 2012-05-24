@@ -39,7 +39,8 @@
                      Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Top"></ProgressBar>
 
         <!-- Back button and page title -->
-        <Button x:Name="backButton" Click="GoBack" IsEnabled="{Binding Frame.CanGoBack, ElementName=pageRoot}" Style="{StaticResource BackButtonStyle}"/>
+        <Button x:Name="backButton" Click="GoBack" IsEnabled="{Binding Frame.CanGoBack, ElementName=pageRoot}" 
+                Style="{StaticResource BackButtonStyle}"/>
         <TextBlock x:Name="pageTitle" Grid.Column="1" Text="Logon" Style="{StaticResource PageHeaderTextStyle}"/>
 
         <Grid Grid.Column="1" Grid.Row="1" Width="400" HorizontalAlignment="Left">
@@ -53,13 +54,15 @@
                 <TextBlock Text="Password"></TextBlock>
                 <PasswordBox Password="{Binding Password,  Mode=TwoWay}"></PasswordBox>
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="Logon" Click="HandleLogonClick"></Button>
-                    <Button Content="Register" Click="HandleRegisterClick"></Button>
+                    <Button Content="Logon" Click="HandleLogonClick" 
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanNegation}}"></Button>
+                    <Button Content="Register" Click="HandleRegisterClick"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanNegation}}"></Button>
                 </StackPanel>
             </StackPanel>
         </Grid>
-
-        <VisualStateManager.VisualStateGroups>
+        
+	<VisualStateManager.VisualStateGroups>
 
             <!-- Visual states reflect the application's view state -->
             <VisualStateGroup>

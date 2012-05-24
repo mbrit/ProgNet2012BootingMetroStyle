@@ -37,7 +37,7 @@ namespace StreetFooClient
             request.Method = "POST";
 
             // get a request stream up to the server...
-            var grsTask = request.GetRequestStreamAsync().ContinueWith((grsResult) =>
+            var grsTask = request.GetRequestStreamAsync().ContinueWith(async (grsResult) =>
             {
                 // send up the JSON to the server...
                 string json = input.Stringify();
@@ -46,27 +46,23 @@ namespace StreetFooClient
                     stream.Write(bs, 0, bs.Length);
 
                 // get the response...
-                var grTask = request.GetResponseAsync().ContinueWith((grResult) =>
+                var response = await request.GetResponseAsync();
+                using (var reader = new StreamReader(response.GetResponseStream()))
+                    json = reader.ReadToEnd();
+
+                // load it...
+                var output = JsonObject.Parse(json);
+
+                // create a result object...
+                T result = (T)Activator.CreateInstance(typeof(T));
+                if (!(output.GetNamedBoolean("isOk")))
                 {
-                    // read it out...
-                    using (var reader = new StreamReader(grResult.Result.GetResponseStream()))
-                        json = reader.ReadToEnd();
+                    string error = output.GetNamedString("error");
+                    result.SetError(error);
+                }
 
-                    // load it...
-                    var output = JsonObject.Parse(json);
-
-                    // create a result object...
-                    T result = (T)Activator.CreateInstance(typeof(T));
-                    if (!(output.GetNamedBoolean("isOk")))
-                    {
-                        string error = output.GetNamedString("error");
-                        result.SetError(error);
-                    }
-
-                    // call the success handler...
-                    success(output, result);
-
-                });
+                // call the success handler...
+                success(output, result);
 
             });
         }

@@ -53,7 +53,8 @@
             <TextBlock Text="Confirm"></TextBlock>
             <PasswordBox Password="{Binding Confirm,  Mode=TwoWay}"></PasswordBox>
             <StackPanel Orientation="Horizontal">
-                <Button Content="Register" Click="HandleRegisterClick"></Button>
+                <Button Content="Register" Click="HandleRegisterClick"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource BooleanNegation}}"></Button>
             </StackPanel>
         </StackPanel>
             

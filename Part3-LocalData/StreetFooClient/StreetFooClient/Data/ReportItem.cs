@@ -35,7 +35,7 @@ namespace StreetFooClient
                     foreach (var report in result.Reports)
                     {
                         // find it...
-                        var existing = conn.Table<ReportItem>().Where(v => v.NativeId == report.NativeId).FirstOrDefault();
+                        var existing = await conn.Table<ReportItem>().Where(v => v.NativeId == report.NativeId).ToFirstOrDefaultAsync();
                         if (existing != null)
                         {
                             // update it...
