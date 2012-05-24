@@ -32,26 +32,14 @@ namespace StreetFooClient.UI
 
         public string Username
         {
-            get
-            {
-                return this.GetDataModelValue<string>();
-            }
-            set
-            {
-                this.SetDataModelValue(value);
-            }
+            get { return this.GetDataModelValue<string>();  }
+            set { this.SetDataModelValue(value); }
         }
 
         public string Password
         {
-            get
-            {
-                return this.GetDataModelValue<string>();
-            }
-            set
-            {
-                this.SetDataModelValue(value);
-            }
+            get { return this.GetDataModelValue<string>(); }
+            set { this.SetDataModelValue(value); }
         }
 
         /// <summary>
@@ -65,31 +53,7 @@ namespace StreetFooClient.UI
 
         private void HandleLogonClick(object sender, RoutedEventArgs e)
         {
-            // in a proper implementation, it's better to setup an MVVM and have this handled
-            // in the view-model...
-
-            // get a proxy - a more sophisticated approach is to use an IoC container here
-            // like TinyIoC...
-            ILogonServiceProxy proxy = new LogonServiceProxy();
-            this.EnterBusy();
-            proxy.Logon(this.Username, this.Password, (result) =>
-            {
-                // show...
-                if (result.IsOk)
-                {
-                    // tell the service that we're logged on...
-                    AppRuntime.Logon(this.Username, result.LogonToken);
-
-                    // go to the "reports" page... but careful, as we may be on a different thread...
-                    this.SafeNavigate(typeof(ReportsPage));
-                }
-                else
-                    this.ShowAlert(result.Error);
-
-                // stop...
-                this.ExitBusy();
-
-            });
+            this.ShowAlert(string.Format("Username: {0}\r\nPassword: {1}", this.Username, this.Password));
         }
 
         private void HandleRegisterClick(object sender, RoutedEventArgs e)

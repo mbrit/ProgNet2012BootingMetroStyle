@@ -13,10 +13,6 @@
 
         <!-- TODO: Delete this line if the key AppName is declared in App.xaml -->
         <x:String x:Key="AppName">My Application</x:String>
-
-        <common:BooleanToVisibilityConverter x:Key="BooleanToVisibility"></common:BooleanToVisibilityConverter>
-        <common:BooleanNegationConverter x:Key="BooleanNegation"></common:BooleanNegationConverter>
-
     </UserControl.Resources>
 
     <!--
@@ -36,10 +32,7 @@
             <ColumnDefinition Width="120"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-
-        <ProgressBar IsIndeterminate="true" Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibility}}" 
-                     Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Top"></ProgressBar>
-
+            
         <Button x:Name="backButton" Click="GoBack" IsEnabled="{Binding Frame.CanGoBack, ElementName=pageRoot}" Style="{StaticResource BackButtonStyle}"/>
         <TextBlock x:Name="pageTitle" Grid.Column="1" Text="Register" Style="{StaticResource PageHeaderTextStyle}"/>
 

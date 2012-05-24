@@ -19,18 +19,32 @@ namespace StreetFooClient.UI
     /// <summary>
     /// A basic page that provides characteristics common to most applications.
     /// </summary>
-    public sealed partial class LogonPage : StreetFooClient.UI.Common.LayoutAwarePage
+    public sealed partial class RegisterPage : StreetFooClient.UI.Common.LayoutAwarePage
     {
-        public LogonPage()
+        public RegisterPage()
         {
             this.InitializeComponent();
 
             // initialize the model...
             this.Username = string.Empty;
+            this.Email = string.Empty;
             this.Password = string.Empty;
+            this.Confirm = string.Empty;
         }
 
         public string Username
+        {
+            get
+            {
+                return this.GetDataModelValue<string>();
+            }
+            set
+            {
+                this.SetDataModelValue(value);
+            }
+        }
+
+        public string Email
         {
             get
             {
@@ -54,6 +68,18 @@ namespace StreetFooClient.UI
             }
         }
 
+        public string Confirm
+        {
+            get
+            {
+                return this.GetDataModelValue<string>();
+            }
+            set
+            {
+                this.SetDataModelValue(value);
+            }
+        }
+
         /// <summary>
         /// Invoked when this page is about to be displayed in a Frame.
         /// </summary>
@@ -63,38 +89,18 @@ namespace StreetFooClient.UI
         {
         }
 
-        private void HandleLogonClick(object sender, RoutedEventArgs e)
+        private void HandleRegisterClick(object sender, RoutedEventArgs e)
         {
-            // in a proper implementation, it's better to setup an MVVM and have this handled
-            // in the view-model...
-
-            // get a proxy - a more sophisticated approach is to use an IoC container here
-            // like TinyIoC...
-            ILogonServiceProxy proxy = new LogonServiceProxy();
-            this.EnterBusy();
-            proxy.Logon(this.Username, this.Password, (result) =>
+            var proxy = new RegisterServiceProxy();
+            proxy.Register(this.Username, this.Email, this.Password, this.Confirm, (result) =>
             {
                 // show...
                 if (result.IsOk)
-                {
-                    // tell the service that we're logged on...
-                    AppRuntime.Logon(this.Username, result.LogonToken);
-
-                    // go to the "reports" page... but careful, as we may be on a different thread...
-                    this.SafeNavigate(typeof(ReportsPage));
-                }
+                    this.ShowAlert(string.Format("User created. New ID: {0}", result.UserId));
                 else
                     this.ShowAlert(result.Error);
 
-                // stop...
-                this.ExitBusy();
-
             });
-        }
-
-        private void HandleRegisterClick(object sender, RoutedEventArgs e)
-        {
-            this.Frame.Navigate(typeof(RegisterPage));
         }
     }
 }

@@ -92,6 +92,7 @@ namespace StreetFooClient.UI
         private void HandleRegisterClick(object sender, RoutedEventArgs e)
         {
             var proxy = new RegisterServiceProxy();
+            this.EnterBusy();
             proxy.Register(this.Username, this.Email, this.Password, this.Confirm, (result) =>
             {
                 // show...
@@ -99,6 +100,9 @@ namespace StreetFooClient.UI
                     this.ShowAlert(string.Format("User created. New ID: {0}", result.UserId));
                 else
                     this.ShowAlert(result.Error);
+
+                // stop...
+                this.ExitBusy();
 
             });
         }

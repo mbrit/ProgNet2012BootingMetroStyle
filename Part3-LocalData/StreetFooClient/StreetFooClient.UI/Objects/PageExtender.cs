@@ -10,22 +10,37 @@ namespace StreetFooClient.UI
 {
     public static class PageExtender
     {
-        public static async void ShowAlert(this Page page, string message)
+        public static void ShowAlert(this Page page, string message)
+        {
+            page.SafeCall(async () =>
+            {
+                // show...
+                MessageDialog dialog = new MessageDialog(message);
+                await dialog.ShowAsync();
+            });
+        }
+
+        internal static void SafeCall(this Page page, Action callback)
         {
             if (!(page.Dispatcher.HasThreadAccess))
             {
                 // flip...
                 page.Dispatcher.Invoke(Windows.UI.Core.CoreDispatcherPriority.Normal, (sender, e) =>
                 {
-                    page.ShowAlert(message);
+                    callback();
 
                 }, page, null);
-                return;
             }
+            else
+                callback();
+        }
 
-            // show...
-            MessageDialog dialog = new MessageDialog(message);
-            await dialog.ShowAsync();
+        public static void SafeNavigate(this Page page, Type type)
+        {
+            page.SafeCall(() =>
+            {
+                page.Frame.Navigate(type);
+            });
         }
     }
 }

@@ -71,23 +71,13 @@ namespace StreetFooClient.UI
             // get a proxy - a more sophisticated approach is to use an IoC container here
             // like TinyIoC...
             ILogonServiceProxy proxy = new LogonServiceProxy();
-            this.EnterBusy();
             proxy.Logon(this.Username, this.Password, (result) =>
             {
                 // show...
                 if (result.IsOk)
-                {
-                    // tell the service that we're logged on...
-                    AppRuntime.Logon(this.Username, result.LogonToken);
-
-                    // go to the "reports" page... but careful, as we may be on a different thread...
-                    this.SafeNavigate(typeof(ReportsPage));
-                }
+                    this.ShowAlert("Logon OK: " + result.LogonToken);
                 else
                     this.ShowAlert(result.Error);
-
-                // stop...
-                this.ExitBusy();
 
             });
         }

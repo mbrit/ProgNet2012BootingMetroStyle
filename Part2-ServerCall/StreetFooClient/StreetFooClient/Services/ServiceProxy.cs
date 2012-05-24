@@ -28,10 +28,6 @@ namespace StreetFooClient
             // put in the API key...
             input.Add("apiKey", ApiKey);
 
-            // do we have a logon token?
-            if (!(string.IsNullOrEmpty(AppRuntime.LogonToken)))
-                input.Add("logonToken", AppRuntime.LogonToken);
-
             // make the call...
             var request = HttpWebRequest.CreateHttp(this.Url);
             request.Method = "POST";

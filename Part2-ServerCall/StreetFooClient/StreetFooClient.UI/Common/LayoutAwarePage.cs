@@ -23,9 +23,6 @@ namespace StreetFooClient.UI.Common
         private IObservableMap<String, Object> _defaultViewModel = new ObservableDictionary<String, Object>();
         private bool _useFilledStateForNarrowWindow = false;
 
-        private int BusyCount { get; set; }
-        private object _busyLock = new object();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="LayoutAwarePage"/> class.
         /// </summary>
@@ -36,9 +33,6 @@ namespace StreetFooClient.UI.Common
             // Map application view state to visual state for this page when it is part of the visual tree
             this.Loaded += this.StartLayoutUpdates;
             this.Unloaded += this.StopLayoutUpdates;
-
-            // set...
-            this.IsBusy = false;
 
             // Establish the default view model as the initial DataContext
             this.DataContext = _defaultViewModel;
@@ -385,39 +379,7 @@ namespace StreetFooClient.UI.Common
         internal void SetDataModelValue(object value, [CallerMemberName] string name = null)
         {
             // set...
-            this.SafeCall(() => this.DefaultViewModel[name] = value);
-        }
-
-        public bool IsBusy
-        {
-            get
-            {
-                return this.GetDataModelValue<bool>();
-            }
-            set
-            {
-                this.SetDataModelValue(value);
-            }
-        }
-
-        public void EnterBusy()
-        {
-            lock (_busyLock)
-            {
-                this.BusyCount++;
-                if (this.BusyCount == 1)
-                    this.IsBusy = true;
-            }
-        }
-
-        public void ExitBusy()
-        {
-            lock (_busyLock)
-            {
-                this.BusyCount--;
-                if (this.BusyCount == 0)
-                    this.IsBusy = false;
-            }
+            this.DefaultViewModel[name] = value;
         }
     }
 }
